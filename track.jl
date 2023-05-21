@@ -3,7 +3,7 @@ using Plots
 using Interpolations
 using Random
 
-# Specify the centerline track coordinates here
+# Specify the centerline track coordinates here (don't duplicate start and end points)
 x = [1; 2; 3; 3; 2; 1; 0; 0]
 y = [0; 0; 1; 2; 3; 3; 2; 1]
 middle_line = [x,y]
@@ -11,6 +11,7 @@ middle_line = [x,y]
 # Creates the width given an input set of points 
 function create_track_width(middle_line, width)
     xm, ym = copy(middle_line[1]), copy(middle_line[2])
+    xmr, ymr = copy(middle_line[1]), copy(middle_line[2])
     vector_length = lastindex(xm)
 
     # Copy the start and end points to the end and start of the vector respectively
@@ -38,12 +39,18 @@ function create_track_width(middle_line, width)
     push!(yo,yo[1])
     push!(xi,xi[1])
     push!(yi,yi[1])
-    return [xo,yo], [xi,yi]
+    push!(xmr,xmr[1])
+    push!(ymr,ymr[1])
+    return [xo,yo], [xi,yi], [xmr,ymr]
 end
 
-outer_line, inner_line = create_track_width(middle_line, 0.1)
+function dist(point1,point2)
+    return norm(point1-point2)
+end
 
-plot(middle_line[1],middle_line[2])
+outer_line, inner_line, center_line = create_track_width(middle_line, 0.1)
+
+plot(center_line[1],center_line[2])
 plot!(outer_line[1],outer_line[2])
 plot!(inner_line[1],inner_line[2])
 savefig("track.png")
