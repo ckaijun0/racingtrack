@@ -50,7 +50,8 @@ end
 
 outer_line, inner_line, center_line = create_track_width(middle_line, 0.1)
 
-plot(center_line[1],center_line[2])
+plt = plot(center_line[1],center_line[2])
 plot!(outer_line[1],outer_line[2])
 plot!(inner_line[1],inner_line[2])
-savefig("track.png")
+# savefig("track.png")
+# display(plt)
