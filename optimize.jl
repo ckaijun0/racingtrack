@@ -51,10 +51,22 @@ function compute_state(initial_point, S, U)
     S[:,1] = [initial_point; 0; 0; 0] # Give initial point, 
     N = lastindex(S[1,:])
     for n = 1:N
-        S = [semi_holonomic_model(S[n],) for n in 1:(N-1)]
+        S = [semi_holonomic_model(S[n],U[n]) for n in 1:(N-1)]
     end
     return S
 end
+
+# Create the semi holonomic model, to calculate S+1 from S and U
+function semi_holonomic_model(S,U)
+    S_next = copy(S)
+    S_next[1] = S[1] + (S[3]*S[5]+0.5*U[2]*S[5].^2).*cos(U[1])
+    S_next[2] = S[2] + (S[3]*S[5]+0.5*U[2]*S[5].^2).*sin(U[1])
+    S_next[3] = S[3] + U[2].*S[5]
+    S_next[4] = S[4] + U(1)
+    d = sqrt((S_next[1]-S[1]).^2 + (S_next[2]-S[2]).^2)
+    S_next[5] = max((-S(3)+sqrt(S[3].^2-2*U[2]*d))/U[2],(-S(3)-sqrt(S[3].^2-2*U[2]*d))/U[2])
+    return S_next
+end 
 
 # Objective: Total time
 function total_time(S)
