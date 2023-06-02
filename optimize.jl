@@ -8,8 +8,8 @@ include("Setup.jl")
 # This is based on Reader's PSO for project2
 
 ## Calling:
-function optimize(f, g, c, x0, n, prob)
-f_p = quadratic_penalty_function2(f,c)
+function optimize(f, g, c, x0, n)
+f_p = quadratic_penalty_function(f,c)
 N = 20
 v_range = (-3,-1)
 population = initialize_population(x0, N, v_range)
