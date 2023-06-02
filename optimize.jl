@@ -51,16 +51,6 @@ U = ones(2, N)
 track_bound = create_track_width(center_line, width)
 # S[:,1] = track_bound[3][1]
 
-# Optimize
-function optimize(func, cons, car_limits, x0, n_iter, track)
-    shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-    return shistory, uhistory, fhistory, chistory
-end
-
-# Method #1 - Quadratic penalty + Particle swarm optimization
-function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-    return shistory, uhistory, fhistory, chistory
-end
 
 # Compute State vector, S, given S[1] and Input vector, U
 function compute_state(initial_point, S, U)
@@ -116,19 +106,32 @@ using Plots
 using Interpolations
 using Random
 include("track.jl")
-include("Setup.jl")
+
+
+# Optimize
+function optimize(func, cons, car_limits, x0, n_iter, track)
+    shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+    return shistory, uhistory, fhistory, chistory
+end
+
+# Method #1 - Quadratic penalty + Particle swarm optimization
+function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+    return shistory, uhistory, fhistory, chistory
+end
+
+
 
 # This is based on Reader's PSO for project2
 
 ## Calling:
-function optimize(f, g, c, x0, n)
-f_p = quadratic_penalty_function(f,c)
-N = 20
-v_range = (-3,-1)
-population = initialize_population(x0, N, v_range)
-xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
-x_best = xhistory[end-length(x0)+1 : end]
-return x_best
+function optimize(f, g, c, x0, n, track)
+        f_p = quadratic_penalty_function(f,c)
+        N = 20
+        v_range = (-3,-1)
+        population = initialize_population(x0, N, v_range)
+        history = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
+        x_best = xhistory[end-length(x0)+1 : end]
+    return x_best
 end
 
 function quadratic_penalty_function(f, c; ρ=9999999999)
