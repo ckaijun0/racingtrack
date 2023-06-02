@@ -47,7 +47,7 @@ Fc = friction_coefficient*m*9.81 # friction = f(normal_force)
 Ac = Fc/m # centripetal acceleration
 
 # State variables vector
-S = ones(5, N)
+# S = ones(5, N)
 U = zeros(2, N)
 U[1,:] = [pi/4 for _ = 1:9]
 
@@ -107,8 +107,9 @@ end
 function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     coord = S[1:2,:]
     bound1, bound2 = reduce(hcat,track_bound[1])', reduce(hcat,track_bound[2])' # Convert vector of vector to array
-    v, θ = S[3,:], S[4,:]
-    ω, a = U[1,:], U[2,:]
+    v, _ = S[3,:], S[4,:]
+    θ, a = U[1,:], U[2,:]
+    ω = θ/S[5,:]
     # Computes distance from each point to checkpoint lines
     N = lastindex(S[1, :])
     all_distances = [abs(norm(coord[:,n]-bound1[:,n])+norm(coord[:,n]-bound2[:,n])-norm(bound1[:,n]-bound2[:,n])) for n in 1:N]
@@ -116,6 +117,7 @@ function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     track_car_constraints = [all_distances.-ϵ;
                             v./vmax.-1;
                             a./amax.-1;
+                            abs.(θ)./θmax.-1;
                             abs.(ω)./ωmax.-1;
                             v.*ω./(Fc*m).-1]
     return track_car_constraints
@@ -131,19 +133,12 @@ function constraint_function(U)
     return constraint_vector
 end
 
-c = constraint_function
-
 # Objective function (f)
 function objective_function(U)
     design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
     return total_time
 end
-
-f = objective_function
-
-# Initialize n
-n = 9999^5
 
 #######################################################################################################################################
 
@@ -155,32 +150,30 @@ using Random
 include("track.jl")
 
 
-# # Optimize
-# function optimize(func, cons, car_limits, x0, n_iter, track)
-#     shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-#     return shistory, uhistory, fhistory, chistory
-# end
+# Optimize
+function optimize(func, cons, car_limits, x0, n_iter, track)
+    shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+    return shistory, uhistory, fhistory, chistory
+end
 
-# # Method #1 - Quadratic penalty + Particle swarm optimization
-# function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-#     return shistory, uhistory, fhistory, chistory
-# end
+# Method #1 - Quadratic penalty + Particle swarm optimization
+function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+    return shistory, uhistory, fhistory, chistory
+end
 
 
 
 # This is based on Reader's PSO for project2
 
 ## Calling:
-optimize(f, c, x0, n)
-
-function optimize(f, c, x0, n)
-    f_p = quadratic_penalty_function(f,c)
-    N = 200
-    v_range = (-3,3)
-    population = initialize_population(x0, N, v_range)
-    history = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
-    x_best = xhistory[end-length(x0)+1 : end]
-return x_best
+function optimize(f, g, c, x0, n, track)
+        f_p = quadratic_penalty_function(f,c)
+        N = 20
+        v_range = (-3,-1)
+        population = initialize_population(x0, N, v_range)
+        history = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
+        x_best = xhistory[end-length(x0)+1 : end]
+    return x_best
 end
 
 function quadratic_penalty_function(f, c; ρ=9999999999)
@@ -209,6 +202,7 @@ function initialize_population(X0, N, v_range)
 end
 
 
+
 function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     n = length(population[1].x)
    
@@ -231,4 +225,3 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     end 
     return xhistory 
 end
-
