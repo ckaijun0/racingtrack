@@ -52,9 +52,6 @@ U = zeros(2, N)
 U[1,:] = [pi/4 for _ = 1:9]
 
 track_bound = create_track_width(center_line, width)
-S[1,:] = track_bound[3][1]
-S[2,:] = track_bound[3][2]
-S[4,:] = zeros(N)
 
 # Create the semi holonomic model, to calculate S+1 from S and U
 function semi_holonomic_model(S, U, local_track_bound)
@@ -74,8 +71,15 @@ function semi_holonomic_model(S, U, local_track_bound)
 end 
 
 # Compute State vector, S, given S[1] and Input vector, U
-function compute_state(S, U, track_bound)
-    N = lastindex(S[1,:])
+function compute_state(U, track_bound)
+    N = lastindex(U[1,:])
+    S = ones(5, N)
+    # Assign initial state
+    S[1,1] = track_bound[3][1][1]
+    S[2,1] = track_bound[3][2][1]
+    S[3,1] = 1
+    S[4,1] = atan((track_bound[3][2][2]-track_bound[3][2][1])/(track_bound[3][1][2]-track_bound[3][1][1]+1e-6))
+    S[5,1] = 0
     for n = 1:(N-1)
         local_track_bound = [[track_bound[1][1][n+1];track_bound[1][2][n+1]],[track_bound[2][1][n+1];track_bound[2][2][n+1]]]
         S[:,n+1] = semi_holonomic_model(S[:,n],U[:,n], local_track_bound)
@@ -99,11 +103,8 @@ function compute_total_time(S)
     return sum(S[5,:])
 end
 
-# Initial design point
-x0 = U
-
-# Constraint function (c)
-function constraints(S, U, track_bound; ϵ=1e-5)
+# Constraints
+function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     coord = S[1:2,:]
     bound1, bound2 = reduce(hcat,track_bound[1])', reduce(hcat,track_bound[2])' # Convert vector of vector to array
     v, θ = S[3,:], S[4,:]
@@ -112,18 +113,28 @@ function constraints(S, U, track_bound; ϵ=1e-5)
     N = lastindex(S[1, :])
     all_distances = [abs(norm(coord[:,n]-bound1[:,n])+norm(coord[:,n]-bound2[:,n])-norm(bound1[:,n]-bound2[:,n])) for n in 1:N]
     # Creates a vector with raw constraint penalties: size (N+1)*5 rows x 1 column
-    constrain_vector = [all_distances.-ϵ;
-                        v./vmax.-1;
-                        a./amax.-1;
-                        abs.(θ)./θmax.-1;
-                        abs.(ω)./ωmax.-1;
-                        v.*ω./(Fc*m).-1]
-    return constrain_vector
+    track_car_constraints = [all_distances.-ϵ;
+                            v./vmax.-1;
+                            a./amax.-1;
+                            abs.(θ)./θmax.-1;
+                            abs.(ω)./ωmax.-1;
+                            v.*ω./(Fc*m).-1]
+    return track_car_constraints
+end
+
+# Initial design point (x0)
+x0 = U
+
+# Constraint function (c)
+function constraint_function(U)
+    S = compute_state(U, track_bound)
+    constraint_vector = compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
+    return constraint_vector
 end
 
 # Objective function (f)
 function objective_function(U)
-    design_point = compute_state(S, U, track_bound)
+    design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
     return total_time
 end
