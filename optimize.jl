@@ -109,7 +109,7 @@ function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     bound1, bound2 = reduce(hcat,track_bound[1])', reduce(hcat,track_bound[2])' # Convert vector of vector to array
     v, _ = S[3,:], S[4,:]
     θ, a = U[1,:], U[2,:]
-    ω = θ/S[5,:]
+    ω = θ./S[5,:]
     # Computes distance from each point to checkpoint lines
     N = lastindex(S[1, :])
     all_distances = [abs(norm(coord[:,n]-bound1[:,n])+norm(coord[:,n]-bound2[:,n])-norm(bound1[:,n]-bound2[:,n])) for n in 1:N]
