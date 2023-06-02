@@ -20,9 +20,9 @@ using Interpolations
 using Random
 include("track.jl")
 
-function optimize(X,U)
-    return X,U,T
-end
+# function optimize(X,U)
+#     return X,U,T
+# end
 
 #######################################################################################################################################
 
@@ -127,18 +127,23 @@ end
 x0 = U
 
 # Constraint function (c)
-function constraint_function(U)
+function con(U)
     S = compute_state(U, track_bound)
     constraint_vector = compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     return constraint_vector
 end
 
+
 # Objective function (f)
-function objective_function(U)
+function fun(U)
     design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
     return total_time
 end
+
+# Initialize n
+
+n = 9999^3
 
 #######################################################################################################################################
 
@@ -194,7 +199,8 @@ function initialize_population(X0, N, v_range)
     population = Particle[]
     for i in 1:N
         x = copy(X0)
-        v = rand(length(X0)) .* (v_range[2] - v_range[1]) .+ v_range[1]
+        # v = rand(length(X0)) .* (v_range[2] - v_range[1]) .+ v_range[1]
+        v = rand(2,lastindex(X0[1,:])) .* (v_range[2] - v_range[1]) .+ v_range[1]
         x_best = copy(X0)
         push!(population, Particle(x, v, x_best))
     end
@@ -225,3 +231,6 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     end 
     return xhistory 
 end
+
+
+optimize(fun, con, x0, n)
