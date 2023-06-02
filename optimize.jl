@@ -1,15 +1,16 @@
-# using LinearAlgebra
-# using Plots
-# using Interpolations
-# using Random
-# include("track.jl")
+using LinearAlgebra
+using Plots
+using Interpolations
+using Random
+include("track.jl")
+include("Setup.jl")
 
-# This is Reader's PSO for project2
+# This is based on Reader's PSO for project2
 
 ## Calling:
 function optimize(f, g, c, x0, n, prob)
 f_p = quadratic_penalty_function2(f,c)
-N = 12
+N = 20
 v_range = (-3,-1)
 population = initialize_population(x0, N, v_range)
 xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
