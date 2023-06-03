@@ -7,14 +7,16 @@ include("plotting.jl")
 
 function build_track()
     # Specify the centerline track coordinates here (don't duplicate start and end points)
-    # x_points = [1; 2; 3; 3; 2; 1; 0; 0]
-    # y_points = [0; 0; 1; 2; 3; 3; 2; 1]
-    x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1]
-    y_points = [0; 0.5; 0; -0.2; -0.3; -0.35; -0.3; -0.2; 0; 2; 2.5; 2.5; 0.5; 0.25]
+    # Make sure track coordinates are float (not int)
+    x_points = [0.0; 5; 10]
+    y_points = [0.0; 0; 0]
+    # x_points = [1.0; 2; 3; 3; 2; 1; 0; 0]
+    # y_points = [0; 0; 1.0; 2; 3; 3; 2; 1]
+    # x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1]
+    # y_points = [0; 0.5; 0; -0.2; -0.3; -0.35; -0.3; -0.2; 0; 2; 2.5; 2.5; 0.5; 0.25]
     width = 0.1
-
     center_line = [x_points, y_points]
-    track_bound = create_track_width(center_line, width)
+    track_bound = create_track_width(center_line, width, false)
     return track_bound
 end
 
@@ -30,7 +32,7 @@ function create_U0(track_bound)
     heading_angle = [get_angle(center_line[1][n],center_line[2][n],center_line[1][n+1],center_line[2][n+1]) for n = 1:(N-1)]
     U[1,1:(N-2)] = [heading_angle[n+1] - heading_angle[n] for n in 1:(N-2)]
     U[1,(N-1)] = heading_angle[1] - heading_angle[N-1]
-    U[2,:] = [0.05*n for n=1:N]
+    U[2,:] = [0.05 for n=1:N]
     return U
 end
 
@@ -40,7 +42,8 @@ function semi_holonomic_model(S, U, local_track_bound)
     point_R, point_L = local_track_bound[1], local_track_bound[2]
     d = get_distance(S[1:2], point_R, point_L, S[4])
     if (S[3]^2 + 2*U[2]*abs(d)) < 0
-        S_next[3] = -sqrt(-(S[3]^2 + 2*U[2]*abs(d)))
+        S_next[3] = 0
+        # S_next[3] = -sqrt(-(S[3]^2 + 2*U[2]*abs(d)))
     else
         S_next[3] = sqrt(S[3]^2 + 2*U[2]*abs(d))
     end
@@ -93,15 +96,15 @@ function compute_total_time(S)
 end
 
 # Constraints
-function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
+function compute_track_car_constraints(S, U, track_bound)
     # Parameters for user input
     vmax = 50 # m/s (111.8mph)
     amax = 3 # m/s^2
-    θmax = 90 # degrees 
-    ωmax = 15 # ω=θ/t (assuming full lock in 3seconds)
+    θmax = 60*pi/180 # degrees to radians
+    ωmax = 20*pi/180 # ω=θ/t (assuming full lock in 3seconds)
     m = 1500 # kg
     friction_coefficient = 0.7 # 0.7=dry road, 0.4=wet road
-    ϵ = 1e-5 # permitted error on position due to floating point errors
+    ϵ = 1e-7 # permitted error on position due to floating point errors
 
     # Derived parameters
     N = lastindex(x_points)+1 # number of points on track + 1 (repeats start point)
@@ -112,16 +115,18 @@ function compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
     v, _ = S[3,:], S[4,:]
     θ, a = U[1,:], U[2,:]
     ω = θ./S[5,:]
+    t = S[5,:]
     # Computes distance from each point to checkpoint lines
     N = lastindex(S[1, :])
     all_distances = [abs(norm(coord[:,n]-bound1[:,n])+norm(coord[:,n]-bound2[:,n])-norm(bound1[:,n]-bound2[:,n])) for n in 1:N]
     # Creates a vector with raw constraint penalties: size (N+1)*5 rows x 1 column
     track_car_constraints = [all_distances.-ϵ;
                             v./vmax.-1;
-                            a./amax.-1;
+                            abs.(a)./amax.-1;
                             abs.(θ)./θmax.-1;
                             abs.(ω)./ωmax.-1;
-                            v.*ω./(Fc*m).-1]
+                            v.*ω./(Fc*m).-1;
+                            -(t.*1e6)]
     return track_car_constraints
 end
 
@@ -137,14 +142,13 @@ function fun(U)
     design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
     #display(total_time)
-    return total_time
+    return abs(total_time)
 end
 
-# track_bound = build_track()
-# U = create_U0(track_bound)
-# S = compute_state(U, track_bound)
-# print(S)
+track_bound = build_track()
+U = create_U0(track_bound)
+S = compute_state(U, track_bound)
 # Plot track (function is in plotting.jl)
-# plot_track(S, U, track_bound)
+plot_track(S, U, track_bound)
 
 

@@ -24,29 +24,30 @@ include("problem.jl")
 # Initial design point (x0)
 track_bound = build_track()
 U = create_U0(track_bound)
-S = compute_state(U, track_bound)
+S_initial = compute_state(U, track_bound)
+total_time_initial = compute_total_time(S_initial)
 
 # Initial design point (x0)
 x0 = U
 
 # Initialize n
-n = 50
+n = 20
 
-# Constraint function (c)
-function con(U1)
-    S = compute_state(U1, track_bound)
-    constraint_vector = compute_track_car_constraints(S, U1, track_bound; ϵ=1e-5)
-    return constraint_vector
-end
+# # Constraint function (c)
+# function con(U1)
+#     S = compute_state(U1, track_bound)
+#     constraint_vector = compute_track_car_constraints(S, U1, track_bound; ϵ=1e-5)
+#     return constraint_vector
+# end
 
-# Objective function (f)
-function fun(U2)
-    design_point = compute_state(U2, track_bound)
-    total_time = compute_total_time(design_point)
-    #display(design_point)
-    display(total_time)
-    return total_time
-end
+# # Objective function (f)
+# function fun(U2)
+#     design_point = compute_state(U2, track_bound)
+#     total_time = compute_total_time(design_point)
+#     #display(design_point)
+#     #display(total_time)
+#     return abs(total_time)
+# end
 
 # # Optimize
 # function optimize(func, cons, car_limits, x0, n_iter, track)
@@ -154,8 +155,11 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
         push!(xhistory, copy(x_best))
         # append!(xhistory, x_best)
     end 
-    return xhistory 
+    return xhistory
 end
 
-optimize(fun, con, x0, n)
-
+U_optimal = optimize(fun, con, x0, n)
+S_optimal = compute_state(U_optimal, track_bound)
+time_taken_optimal = compute_total_time(S_optimal)
+display(S_optimal)
+display(U_optimal)
