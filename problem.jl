@@ -136,7 +136,7 @@ end
 function fun(U)
     design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
-    # display(total_time)
+    #display(total_time)
     return total_time
 end
 

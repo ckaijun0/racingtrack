@@ -30,20 +30,21 @@ S = compute_state(U, track_bound)
 x0 = U
 
 # Initialize n
-n = 5000
+n = 50
 
 # Constraint function (c)
-function con(U)
-    S = compute_state(U, track_bound)
-    constraint_vector = compute_track_car_constraints(S, U, track_bound; ϵ=1e-5)
+function con(U1)
+    S = compute_state(U1, track_bound)
+    constraint_vector = compute_track_car_constraints(S, U1, track_bound; ϵ=1e-5)
     return constraint_vector
 end
 
 # Objective function (f)
-function fun(U)
-    design_point = compute_state(U, track_bound)
+function fun(U2)
+    design_point = compute_state(U2, track_bound)
     total_time = compute_total_time(design_point)
-    # display(total_time)
+    #display(design_point)
+    display(total_time)
     return total_time
 end
 
@@ -66,8 +67,9 @@ end
 function optimize(f, c, x0, n)
         f_p = quadratic_penalty_function(f,c)
         N = 200
-        v_range = (0,100)
-        population = initialize_population(x0, N, v_range)
+        x_range = (-5,5)
+        v_range = (-10,10)
+        population = initialize_population(x0, N, x_range, v_range)
         xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
         # display(xhistory)
         x_best = xhistory[end]
@@ -101,11 +103,12 @@ end
 #     return population
 # end
 
-function initialize_population(X0, N, v_range)
+function initialize_population(X0, N, x_range, v_range)
     population = Particle[]
     for i in 1:N
         x = copy(X0)
-        v = rand(size(U,1), size(U,2)) .* (v_range[2] - v_range[1]) .+ v_range[1]
+        x = x + rand(size(X0,1), size(X0,2)) .* (x_range[2] - x_range[1]) .+ x_range[1]
+        v = rand(size(X0,1), size(X0,2)) .* (v_range[2] - v_range[1]) .+ v_range[1]
         # display(v)
         x_best = copy(X0)
         push!(population, Particle(x, v, x_best))
@@ -119,25 +122,36 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     n2 = size(population[1].x,2)
    
     x_best, y_best = copy(population[1].x_best), Inf
-    xhistory = [copy(x_best) ]
+    xhistory = [copy(x_best)]
     for P in population
-        y = f(P.x)
-        if y < y_best; x_best[:], y_best = P.x, y; end 
+        y = fun(P.x)
+        if y < y_best; 
+            x_best[:], y_best = P.x, y; 
+        end 
     end
-    for k in 1 : k_max/((6*length(population)+2))
+    # for k in 1 : k_max/((6*length(population)+2))
+    for k in 1 : k_max
         for P in population
             r1, r2 = rand(n1, n2), rand(n1, n2)
             # display(P.x)
             # display(P.v)
             # display(P.x_best)
             # display(n1)
-            P.x .+= P.v
-            P.v = w.*P.v + c1.*r1.*(P.x_best - P.x) + c2.*r2.*(x_best - P.x)
-            y = f(P.x)
-            if y < y_best; x_best[:], y_best = P.x, y; end
-            if y < f(P.x_best); P.x_best[:] = P.x; end
+            P.x += P.v
+            P.v = w.*P.v + c1.*r1.*(P.x_best .- P.x) + c2.*r2.*(x_best .- P.x)
+            y = fun(P.x)
+            # display(fun(P.x))
+            if y < y_best; 
+                x_best[:], y_best = P.x, y; 
+            end
+            # display(y)
+            if y < fun(P.x_best);
+                # display(x_best) 
+                # P.x_best[:] .= P.x;
+                P.x_best = copy(P.x) 
+            end
         end
-        push!(xhistory, x_best)
+        push!(xhistory, copy(x_best))
         # append!(xhistory, x_best)
     end 
     return xhistory 
