@@ -171,12 +171,12 @@ end
 # This is based on Reader's PSO for project2
 
 ## Calling:
-function optimize(f, g, c, x0, n, track)
+function optimize(f, c, x0, n)
         f_p = quadratic_penalty_function(f,c)
         N = 20
         v_range = (-3,-1)
         population = initialize_population(x0, N, v_range)
-        history = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
+        xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
         x_best = xhistory[end-length(x0)+1 : end]
     return x_best
 end
@@ -195,12 +195,24 @@ mutable struct Particle
     x_best
 end
 
+# function initialize_population(X0, N, v_range)
+#     population = Particle[]
+#     for i in 1:N
+#         x = copy(X0)
+#         # v = rand(length(X0)) .* (v_range[2] - v_range[1]) .+ v_range[1]
+#         v = rand(2,lastindex(X0[1,:])) .* (v_range[2] - v_range[1]) .+ v_range[1]
+#         x_best = copy(X0)
+#         push!(population, Particle(x, v, x_best))
+#     end
+#     return population
+# end
+
 function initialize_population(X0, N, v_range)
     population = Particle[]
     for i in 1:N
         x = copy(X0)
-        # v = rand(length(X0)) .* (v_range[2] - v_range[1]) .+ v_range[1]
-        v = rand(2,lastindex(X0[1,:])) .* (v_range[2] - v_range[1]) .+ v_range[1]
+        v = rand(size(U,1), size(U,2)) .* (v_range[2] - v_range[1]) .+ v_range[1]
+        # display(v)
         x_best = copy(X0)
         push!(population, Particle(x, v, x_best))
     end
@@ -209,8 +221,11 @@ end
 
 
 
+
 function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
-    n = length(population[1].x)
+    # n = length(population[1].x)
+    n1 = size((population[1].x),1)
+    n2 = size(population[1].x,2)
    
     x_best, y_best = copy(population[1].x_best), Inf
     xhistory = copy(x_best) 
@@ -220,11 +235,15 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     end
     for k in 1 : k_max/((6*length(population)+2))
         for P in population
-            r1, r2 = rand(n), rand(n)
-            P.x += P.v
-            P.v = w*P.v + c1*r1.*(P.x_best - P.x) + c2*r2.*(x_best - P.x)
+            r1, r2 = rand(n1, n2), rand(n1, n2)
+            # display(P.x)
+            # display(P.v)
+            # display(P.x_best)
+            # display(n1)
+            P.x .+= P.v
+            P.v = w.*P.v + c1.*r1.*(P.x_best - P.x) + c2.*r2.*(x_best - P.x)
             y = f(P.x)
-            if y < y_best; x_best[:], y_best = P.x, y; end 
+            if y < y_best; x_best[:], y_best = P.x, y; end
             if y < f(P.x_best); P.x_best[:] = P.x; end
         end
         append!(xhistory, x_best)
