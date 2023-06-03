@@ -70,7 +70,8 @@ function optimize(f, c, x0, n)
         population = initialize_population(x0, N, v_range)
         xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
         # display(xhistory)
-        x_best = xhistory[(end-length(x0)+1) : end]
+        x_best = xhistory[end]
+        # x_best = xhistory[(end-length(x0)+1) : end]
     return x_best
 end
 
@@ -141,6 +142,5 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     end 
     return xhistory 
 end
-
 
 optimize(fun, con, x0, n)
