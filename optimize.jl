@@ -58,6 +58,7 @@ function semi_holonomic_model(S, U, local_track_bound)
     S_next = copy(S)
     point_R, point_L = local_track_bound[1], local_track_bound[2]
     d = get_distance(S[1:2], point_R, point_L, S[4])
+    # display(d)
     S_next[3] = sqrt(S[3]^2 + 2*U[2]*d)
     if U[2] == 0
         S_next[5] = d/S[3]
@@ -138,12 +139,13 @@ end
 function fun(U)
     design_point = compute_state(U, track_bound)
     total_time = compute_total_time(design_point)
+    # display(total_time)
     return total_time
 end
 
 # Initialize n
 
-n = 9999^3
+n = 100
 
 #######################################################################################################################################
 
@@ -155,16 +157,16 @@ using Random
 include("track.jl")
 
 
-# Optimize
-function optimize(func, cons, car_limits, x0, n_iter, track)
-    shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-    return shistory, uhistory, fhistory, chistory
-end
+# # Optimize
+# function optimize(func, cons, car_limits, x0, n_iter, track)
+#     shistory, uhistory, fhistory, chistory = quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+#     return shistory, uhistory, fhistory, chistory
+# end
 
-# Method #1 - Quadratic penalty + Particle swarm optimization
-function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
-    return shistory, uhistory, fhistory, chistory
-end
+# # Method #1 - Quadratic penalty + Particle swarm optimization
+# function quad_penalty_particle_swarm(func, cons, car_limits, x0, n_iter, track)
+#     return shistory, uhistory, fhistory, chistory
+# end
 
 
 
@@ -174,9 +176,10 @@ end
 function optimize(f, c, x0, n)
         f_p = quadratic_penalty_function(f,c)
         N = 20
-        v_range = (-3,-1)
+        v_range = (0,100)
         population = initialize_population(x0, N, v_range)
         xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
+        # display(xhistory)
         x_best = xhistory[end-length(x0)+1 : end]
     return x_best
 end
