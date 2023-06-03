@@ -59,6 +59,7 @@ function semi_holonomic_model(S, U, local_track_bound)
     point_R, point_L = local_track_bound[1], local_track_bound[2]
     d = get_distance(S[1:2], point_R, point_L, S[4])
     # display(d)
+    # display(U[2])
     S_next[3] = sqrt(S[3]^2 + 2*U[2]*d)
     if U[2] == 0
         S_next[5] = d/S[3]
@@ -145,7 +146,7 @@ end
 
 # Initialize n
 
-n = 100
+n = 5000
 
 #######################################################################################################################################
 
@@ -175,7 +176,7 @@ include("track.jl")
 ## Calling:
 function optimize(f, c, x0, n)
         f_p = quadratic_penalty_function(f,c)
-        N = 20
+        N = 200
         v_range = (0,100)
         population = initialize_population(x0, N, v_range)
         xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
