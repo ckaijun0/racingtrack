@@ -31,7 +31,7 @@ total_time_initial = compute_total_time(S_initial)
 x0 = U
 
 # Initialize n
-n = 20
+n = 500
 
 # # Constraint function (c)
 # function con(U1)
@@ -60,49 +60,51 @@ n = 20
 #     return shistory, uhistory, fhistory, chistory
 # end
 
-
-
 # This is based on Reader's PSO for project2
 
 ## Calling:
 function optimize(f, c, x0, n)
-        f_p = quadratic_penalty_function(f,c)
+        f_p = interior_point_method(f,c)
         N = 200
-        x_range = (-5,5)
-        v_range = (-10,10)
+        x_range = (-10,10)
+        v_range = (-4,4)
         population = initialize_population(x0, N, x_range, v_range)
-        xhistory = particle_swarm_optimization(f_p, population, n; w=0.7, c1=1.2, c2=1.2)
+        xhistory, fhistory = particle_swarm_optimization(f_p, population, n; w=0.1, c1=0.7, c2=0.7)
         # display(xhistory)
         x_best = xhistory[end]
         # x_best = xhistory[(end-length(x0)+1) : end]
-    return x_best
+    return xhistory, fhistory
 end
 
 function quadratic_penalty_function(f, c; ρ=9999999999)
     function h(x)
-        penalty = sum(((c(x).>0) .* c(x)).^2)
-        return f(x) + (ρ.^8) * penalty
+        penalty = sum(((c(x).>0) .* c(x)).^8)
+        return f(x) + (ρ.^9999999999999) * penalty
     end
     return h
 end
 
+function mixed_penalty_function(f, c; ρ=9999999999)
+    function h(x)
+        penalty = sum(((c(x).>0) .* c(x)).^2)
+        return f(x) + (ρ.^99999999) * penalty + 999999 * (c(x).>0 .* c(x))
+    end
+    return h
+end
+
+function interior_point_method(f, c; ρ=10)
+    function h(x)
+        # penalty = -sum((c(x).>-1) .* log.(-c(x)))
+        penalty = -sum(1/c(x))
+        return f(x) + 1/ρ*penalty
+    end
+    return h
+end
 mutable struct Particle 
     x
     v
     x_best
 end
-
-# function initialize_population(X0, N, v_range)
-#     population = Particle[]
-#     for i in 1:N
-#         x = copy(X0)
-#         # v = rand(length(X0)) .* (v_range[2] - v_range[1]) .+ v_range[1]
-#         v = rand(2,lastindex(X0[1,:])) .* (v_range[2] - v_range[1]) .+ v_range[1]
-#         x_best = copy(X0)
-#         push!(population, Particle(x, v, x_best))
-#     end
-#     return population
-# end
 
 function initialize_population(X0, N, x_range, v_range)
     population = Particle[]
@@ -124,6 +126,7 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
    
     x_best, y_best = copy(population[1].x_best), Inf
     xhistory = [copy(x_best)]
+    fhistory = [fun(x_best)]
     for P in population
         y = fun(P.x)
         if y < y_best; 
@@ -153,13 +156,22 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
             end
         end
         push!(xhistory, copy(x_best))
+        push!(fhistory, copy(fun(x_best)))
         # append!(xhistory, x_best)
     end 
-    return xhistory
+    return xhistory, fhistory
 end
 
-U_optimal = optimize(fun, con, x0, n)
+xhistory, fhistory = optimize(fun, con, x0, n)
+U_optimal = xhistory[end]
+time_taken_optimal = fhistory[end]
+# U_optimal = optimize(fun, con, x0, n)
 S_optimal = compute_state(U_optimal, track_bound)
-time_taken_optimal = compute_total_time(S_optimal)
+# time_taken_optimal = compute_total_time(S_optimal)
+println("~~Time~")
+display(time_taken_optimal)
+println("~~State~~")
 display(S_optimal)
+println("~~Inputs~~")
 display(U_optimal)
+plot_track(S_optimal, U_optimal, track_bound)
