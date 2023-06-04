@@ -33,7 +33,7 @@ total_time_initial = compute_total_time(S_initial)
 x0 = U
 
 # Initialize n
-n = 5000
+n = 500
 
 # # Constraint function (c)
 # function con(U1)
@@ -66,7 +66,8 @@ n = 5000
 
 ## Calling:
 function optimize(f, c, x0, n)
-        f_p = interior_point_method(f,c)
+        # f_p = interior_point_method(f,c)
+        f_p = mixed_penalty_function(f,c)
         # N = 200
         # x_range = (-10,10)
         # v_range = (-4,4)
@@ -75,7 +76,7 @@ function optimize(f, c, x0, n)
         # x_best = xhistory[end]
         # x_best = xhistory[(end-length(x0)+1) : end]
 
-        xhistory, fhistory = hooke_jeeves(f_p,x0,c,n,0.1,0.5)
+        xhistory, fhistory = hooke_jeeves(f_p,x0,c,n,10,0.5)
 
     return xhistory, fhistory
 end
@@ -88,10 +89,12 @@ function quadratic_penalty_function(f, c; ρ=99999999999999)
     return h
 end
 
-function mixed_penalty_function(f, c; ρ=9999999999)
+function mixed_penalty_function(f, c; ρ=1/10)
     function h(x)
-        penalty = sum(((c(x).>0) .* c(x)).^2)
-        return f(x) + (ρ.^99999999) * penalty + 999999 * (c(x).>0 .* c(x))
+        penalty1 = sum(((c(x).>0) .* c(x)))
+        penalty2 = sum(((c(x).>0) .* c(x)).^2)
+        penalty3 = sum(((c(x).>0) .* c(x)).^4)
+        return f(x) + (ρ) * (penalty1 + 1)
     end
     return h
 end
@@ -219,3 +222,7 @@ display(S_optimal)
 println("~~Inputs~~")
 display(U_optimal)
 plot_track(S_optimal, U_optimal, track_bound)
+savefig("track_run.png")
+
+plot(fhistory)
+savefig("convergence.png")
