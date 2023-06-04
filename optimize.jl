@@ -24,7 +24,8 @@ include("problem.jl")
 # Initial design point (x0)
 track_bound = build_track()
 U = create_U0(track_bound)
-U[1,:] = [0.1 for _ in 1:lastindex(U[1,:])] # Artificial deviation from the optimal line
+# U[1,:] = [0.02 for _ in 1:lastindex(U[1,:])] # Artificial deviation from the optimal line
+# U_initial = copy(U)
 S_initial = compute_state(U, track_bound)
 total_time_initial = compute_total_time(S_initial)
 
@@ -74,15 +75,15 @@ function optimize(f, c, x0, n)
         # x_best = xhistory[end]
         # x_best = xhistory[(end-length(x0)+1) : end]
 
-        xhistory = hooke_jeeves(f_p,x0,c,20000,0.1,0.5)
+        xhistory, fhistory = hooke_jeeves(f_p,x0,c,n,0.1,0.5)
 
     return xhistory, fhistory
 end
 
-function quadratic_penalty_function(f, c; ρ=9999999999)
+function quadratic_penalty_function(f, c; ρ=99999999999999)
     function h(x)
-        penalty = sum(((c(x).>0) .* c(x)).^8)
-        return f(x) + (ρ.^9999999999999) * penalty
+        penalty = sum(((c(x).>0) .* c(x)).^88)
+        return f(x) + (ρ.^99999999999999999) * penalty
     end
     return h
 end
@@ -171,7 +172,7 @@ end
 function hooke_jeeves(f, x, c, counts, α, γ)
     y = f(x)
     xhistory = [copy(x)]
-
+    fhistory = [fun(x)]
     for k in 1:counts
         improved = false
         x_best, y_best = x, y
@@ -195,9 +196,11 @@ function hooke_jeeves(f, x, c, counts, α, γ)
         end
         # display(x_best)
         push!(xhistory, copy(x_best))
+        push!(fhistory, copy(fun(x_best)))
     end
 
-    return xhistory
+    return xhistory, fhistory
+    
 end
 
 
