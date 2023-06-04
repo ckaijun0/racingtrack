@@ -65,14 +65,16 @@ n = 500
 ## Calling:
 function optimize(f, c, x0, n)
         f_p = interior_point_method(f,c)
-        N = 200
-        x_range = (-10,10)
-        v_range = (-4,4)
-        population = initialize_population(x0, N, x_range, v_range)
-        xhistory, fhistory = particle_swarm_optimization(f_p, population, n; w=0.1, c1=0.7, c2=0.7)
-        # display(xhistory)
-        x_best = xhistory[end]
+        # N = 200
+        # x_range = (-10,10)
+        # v_range = (-4,4)
+        # population = initialize_population(x0, N, x_range, v_range)
+        # xhistory, fhistory = particle_swarm_optimization(f_p, population, n; w=0.1, c1=0.7, c2=0.7)
+        # x_best = xhistory[end]
         # x_best = xhistory[(end-length(x0)+1) : end]
+
+        xhistory = hooke_jeeves(f_p,x0,c,20000,0.1,0.5)
+
     return xhistory, fhistory
 end
 
@@ -161,6 +163,41 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     end 
     return xhistory, fhistory
 end
+
+function hooke_jeeves(f, x, c, counts, α, γ) 
+    y, n = f(x), size(x)
+    xhistory = copy(x)
+
+    for k in 1 : counts
+        improved = false
+        x_best, y_best = x, y 
+        display(n)
+        for i in 1 : n
+            for sgn in (-1,1)
+                x′ = x + sgn*α*basis(i, n) 
+                y′ = f(x′)
+                if y′ < y_best
+                    x_best, y_best, improved = x′, y′, true 
+                end
+            end 
+        end
+            x, y = x_best, y_best
+        
+        if !improved
+            α *= γ 
+        end
+        append!(xhistory, x)
+    end
+    return xhistory
+end
+
+function basis(i,n)
+        vec = zeros(n)
+        vec[i] = 1
+        return vec
+end 
+
+
 
 xhistory, fhistory = optimize(fun, con, x0, n)
 U_optimal = xhistory[end]
