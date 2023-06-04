@@ -33,7 +33,7 @@ total_time_initial = compute_total_time(S_initial)
 x0 = U
 
 # Initialize n
-n = 500
+n = 5000
 
 # # Constraint function (c)
 # function con(U1)

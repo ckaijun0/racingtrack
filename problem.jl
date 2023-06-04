@@ -10,15 +10,15 @@ function build_track()
     # Make sure track coordinates are float (not int)
     # x_points = [0.0; 5; 10]
     # y_points = [0.0;0;0]
-    x_points = [0.0; 1;2;3;4;5;6;7;8;9;10]*2
-    y_points = [0.0; 0;0;0;0;0;0;0;0;0;0]
+    # x_points = [0.0; 1;2;3;4;5;6;7;8;9;10]*2
+    # y_points = [0.0; 0;0;0;0;0;0;0;0;0;0]
     # x_points = [1.0; 2; 3; 3; 2; 1; 0; 0]
     # y_points = [0; 0; 1.0; 2; 3; 3; 2; 1]
-    # x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1]
-    # y_points = [0; 0.5; 0; -0.2; -0.3; -0.35; -0.3; -0.2; 0; 2; 2.5; 2.5; 0.5; 0.25]
-    width = 0.1
+    x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1] *20
+    y_points = [0; 0.5; 0; -0.2; -0.3; -0.35; -0.3; -0.2; 0; 2; 2.5; 2.5; 0.5; 0.25]*20
+    width = 2
     center_line = [x_points, y_points]
-    track_bound = create_track_width(center_line, width, false)
+    track_bound = create_track_width(center_line, width, true)
     return track_bound
 end
 
