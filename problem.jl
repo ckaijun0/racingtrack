@@ -16,10 +16,10 @@ function build_track()
     # y_points = [0; 0; 1.0; 2; 3; 3; 2; 1]*5
     # x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1] *20
     # y_points = [0; 0.5; 0; -0.2; -0.3; -0.35; -0.3; -0.2; 0; 2; 2.5; 2.5; 0.5; 0.25]*20
-    x_points = collect(range(1, stop = 10, step = 0.5))
+    x_points = collect(range(1, stop = 10.0, step = 0.5))
     y_points = sin.(x_points)*2
 
-    width = 0.3
+    width = 0.4
     center_line = [x_points, y_points]
     track_bound = create_track_width(center_line, width, false)
     return track_bound
@@ -52,7 +52,7 @@ function create_U0(track_bound)
     heading_angle = [get_angle(center_line[1][n],center_line[2][n],center_line[1][n+1],center_line[2][n+1]) for n = 1:(N-1)]
     U[1,1:(N-2)] = [heading_angle[n+1] - heading_angle[n] for n in 1:(N-2)]
     U[1,(N-1)] = heading_angle[1] - heading_angle[N-1]
-    U[2,:] = [0.05 for n=1:N]
+    U[2,:] = [0.01 for n=1:N]
     return U
 end
 
@@ -86,6 +86,23 @@ function semi_holonomic_model(S, U, local_track_bound)
     return S_next
 end 
 
+# Compute State vector without propagating instability by using previous state
+function compute_stable_state(U, track_bound, S_prev)
+    N = lastindex(U[1,:])
+    S = ones(5, N)
+    # Assign initial state
+    S[1,1] = track_bound[3][1][1]
+    S[2,1] = track_bound[3][2][1]
+    S[3,1] = 0.1
+    S[4,1] = atan((track_bound[3][2][2]-track_bound[3][2][1]),(track_bound[3][1][2]-track_bound[3][1][1]))
+    S[5,1] = 0.001
+    for n = 1:(N-1)
+        local_track_bound = [[track_bound[1][1][n+1];track_bound[1][2][n+1]],[track_bound[2][1][n+1];track_bound[2][2][n+1]]]
+        S[:,n+1] = semi_holonomic_model(S_prev[:,n],U[:,n], local_track_bound)
+    end
+    return S
+end
+
 # Compute State vector, S, given S[1] and Input vector, U
 function compute_state(U, track_bound)
     N = lastindex(U[1,:])
@@ -93,7 +110,7 @@ function compute_state(U, track_bound)
     # Assign initial state
     S[1,1] = track_bound[3][1][1]
     S[2,1] = track_bound[3][2][1]
-    S[3,1] = 0.1
+    S[3,1] = 0.01
     S[4,1] = atan((track_bound[3][2][2]-track_bound[3][2][1]),(track_bound[3][1][2]-track_bound[3][1][1]))
     S[5,1] = 0.001
     for n = 1:(N-1)
@@ -146,13 +163,13 @@ function compute_track_car_constraints(S, U, track_bound)
     #                         abs.(ω)./ωmax.-1;
     #                         v.*ω./(Fc*m).-1;
     #                         -(t.*1e6)]
-    track_car_constraints = [(all_distances.-ϵ);
-                            v.-vmax;
-                            -v;
-                            abs.(a).-amax;
-                            abs.(θ).-θmax;
-                            abs.(ω).-ωmax;
-                            abs.(v.*ω).-(Fc*m)]
+    track_car_constraints = [(all_distances./ϵ).-1;
+                            v./vmax.-1;
+                            -v./abs.(v);
+                            abs.(a)./amax.-1;
+                            abs.(θ)./θmax.-1;
+                            abs.(ω)./ωmax.-1;
+                            abs.(v.*ω)./(Fc*m).-1]
                           #  -(t.*1e6)]                            
     return track_car_constraints
 end

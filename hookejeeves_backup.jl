@@ -33,7 +33,7 @@ total_time_initial = compute_total_time(S_initial)
 x0 = U_initial
 
 # Initialize n
-n = 50
+n = 100
 
 # # Constraint function (c)
 # function con(U1)
@@ -66,56 +66,37 @@ n = 50
 
 ## Calling:
 function optimize(f, c, x0, n)
-        f_p = interior_point_method(f,c)
-        N = 200
-        x_range = (-10,10)
-        v_range = (-4,4)
-        population = initialize_population(x0, N, x_range, v_range)
-        xhistory, fhistory = particle_swarm_optimization(f_p, population, n; w=0.1, c1=0.7, c2=0.7)
-        x_best = xhistory[end]
-        
-        # f_p = mixed_penalty_function(f,c)
-        # xhistory, fhistory, chistory = hooke_jeeves(f_p,x0,c,n,0.1,0.5)
+        f_p = quadratic_penalty_function(f,c)
+        # N = 200
+        # x_range = (-10,10)
+        # v_range = (-4,4)
+        # population = initialize_population(x0, N, x_range, v_range)
+        # xhistory, fhistory = particle_swarm_optimization(f_p, population, n; w=0.1, c1=0.7, c2=0.7)
+        # x_best = xhistory[end]
+        # x_best = xhistory[(end-length(x0)+1) : end]
 
-        # α=0.1
-        # β=0.8
-        # xhistory  = nesterov_momentum!(α, β, v, f_p, c, x0)
-        # push!(xhistory, xnext)
-        # push!(fhistory, f(xnext))
+        xhistory, fhistory = hooke_jeeves(f_p,x0,c,n,0.1,0.5)
 
-    return xhistory, fhistory #, chistory
+    return xhistory, fhistory
 end
 
-# function nesterov_momentum!(α, β, v, f, g, x)
-#     xhistory = [copy(x)]
-#     fhistory = [f(x)]
-
-#     for i = 1:n/2-1
-#         g = g(x_next+β*v)
-#         gnorm = g/sqrt(sum(dot(g,g)))
-#         v[:] = β*v - α*gnorm
-#         x_next = x + v
-#     end
-#     return xhistory, fhistory
-# end
-
-function quadratic_penalty_function(f, c; ρ=999999999999999)
+function quadratic_penalty_function(f, c; ρ=99999999999999)
     function h(x)
         penalty = sum(((c(x).>0) .* c(x)).^2)
-        return f(x) + (ρ.^9999999999999999) * penalty
+        return f(x) + (ρ.^99999999999999999) * penalty
     end
     return h
 end
 
-function mixed_penalty_function(f, c; ρ=999999999)
+function mixed_penalty_function(f, c; ρ=99999)
     function h(x)
         penalty = sum(((c(x).>0) .* c(x)).^2)
-        return f(x) + (ρ.^99999999) * penalty + 999999 * sum(c(x).>0 .* c(x))
+        return f(x) + (ρ.^99999999) * penalty + 999999 * (c(x).>0 .* c(x))
     end
     return h
 end
 
-function interior_point_method(f, c; ρ=99999999999)
+function interior_point_method(f, c; ρ=10)
     function h(x)
         # penalty = -sum((c(x).>-1) .* log.(-c(x)))
         penalty = -sum(1/c(x))
@@ -188,9 +169,9 @@ end
 function hooke_jeeves(f, x, c, counts, α, γ)
     y = f(x)
     xhistory = [copy(x)]
-    fhistory = [copy(fun(x))]
-    c_vec = c(x)
-    chistory = [copy(sum((c_vec.>0).*c_vec))]
+    fhistory = [fun(x)]
+    #c_vec = c(x)
+    #chistory = [sum((c_vec .>0)*c_vec)]
     for k in 1:counts
         improved = false
         x_best, y_best = x, y
@@ -215,11 +196,11 @@ function hooke_jeeves(f, x, c, counts, α, γ)
         # display(x_best)
         push!(xhistory, copy(x_best))
         push!(fhistory, copy(fun(x_best)))
-        c_vec = copy(c(x_best))
-        push!(chistory, sum((c_vec.>0).*c_vec))
+        #c_vec = c(x_best)
+        #push!(chistory, sum((c_vec .>0)*c_vec))
     end
 
-    return xhistory, fhistory, chistory
+    return xhistory, fhistory#, chistory
     
 end
 

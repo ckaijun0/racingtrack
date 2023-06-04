@@ -4,9 +4,9 @@ using Interpolations
 using Random
 
 # Specify the centerline track coordinates here (don't duplicate start and end points)
-x = [1.0; 2; 3; 3; 2; 1; 0; 0]
-y = [0.0; 0; 1.0; 2; 3; 3; 2; 1]
-middle_line = [x,y]
+# x = [1.0; 2; 3; 3; 2; 1; 0; 0]
+# y = [0.0; 0; 1.0; 2; 3; 3; 2; 1]
+# middle_line = [x,y]
 
 # Artificially extend the start and ends of the track to permit initial and final change in heading angles
 function artificial_zones(xa, ya)
