@@ -8,10 +8,10 @@ include("plotting.jl")
 function build_track()
     # Specify the centerline track coordinates here (don't duplicate start and end points)
     # Make sure track coordinates are float (not int)
-    x_points = [0.0; 5; 10]
-    y_points = [0.0;0;0]
-    # x_points = [0.0; 1;2;3;4;5;6;7;8;9;10]*2
-    # y_points = [0.0; 0;0;0;0;0;0;0;0;0;0]
+    # x_points = [0.0; 5; 10]
+    # y_points = [0.0;0;0]
+    x_points = [0.0; 1;2;3;4;5;6;7;8;9;10]*2
+    y_points = [0.0; 0;0;0;0;0;0;0;0;0;0]
     # x_points = [1.0; 2; 3; 3; 2; 1; 0; 0]
     # y_points = [0; 0; 1.0; 2; 3; 3; 2; 1]
     # x_points = [1; 1.5; 3; 3.1; 3.2; 3.3; 3.4; 3.5; 4; 4.1; 3.9; 0; 0.5; 1]

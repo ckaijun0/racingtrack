@@ -24,6 +24,7 @@ include("problem.jl")
 # Initial design point (x0)
 track_bound = build_track()
 U = create_U0(track_bound)
+U[1,:] = [0.1 for _ in 1:lastindex(U[1,:])] # Artificial deviation from the optimal line
 S_initial = compute_state(U, track_bound)
 total_time_initial = compute_total_time(S_initial)
 
