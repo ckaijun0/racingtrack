@@ -164,38 +164,41 @@ function particle_swarm_optimization(f, population, k_max; w=1, c1=1, c2=1)
     return xhistory, fhistory
 end
 
-function hooke_jeeves(f, x, c, counts, α, γ) 
-    y, n = f(x), size(x)
-    xhistory = copy(x)
 
-    for k in 1 : counts
+
+
+function hooke_jeeves(f, x, c, counts, α, γ)
+    y = f(x)
+    xhistory = [copy(x)]
+
+    for k in 1:counts
         improved = false
-        x_best, y_best = x, y 
-        display(n)
-        for i in 1 : n
-            for sgn in (-1,1)
-                x′ = x + sgn*α*basis(i, n) 
+        x_best, y_best = x, y
+
+        for i in 1:length(x)
+            for sgn in (-1, 1)
+                x′ = copy(x)
+                x′[i] += sgn * α
                 y′ = f(x′)
+
                 if y′ < y_best
-                    x_best, y_best, improved = x′, y′, true 
+                    x_best, y_best, improved = copy(x′), y′, true
                 end
-            end 
+            end
         end
-            x, y = x_best, y_best
-        
+
+        x, y = copy(x_best), y_best
+
         if !improved
-            α *= γ 
+            α *= γ
         end
-        append!(xhistory, x)
+        # display(x_best)
+        push!(xhistory, copy(x_best))
     end
+
     return xhistory
 end
 
-function basis(i,n)
-        vec = zeros(n)
-        vec[i] = 1
-        return vec
-end 
 
 
 
